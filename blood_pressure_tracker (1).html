@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>血壓記錄器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .form-container {
+            padding: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-row input[type="number"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-row input[type="number"]:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .separator {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+
+        input[type="datetime-local"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="datetime-local"]:focus, textarea:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 2px solid #e1e8ed;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .config-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .config-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .recent-records {
+            margin-top: 25px;
+        }
+
+        .recent-records h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .record-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .record-date {
+            font-weight: 600;
+            color: #ff6b6b;
+        }
+
+        .record-values {
+            color: #666;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🩺 血壓記錄器</h1>
+            <p>每日健康管理好幫手</p>
+        </div>
+
+        <div class="form-container">
+            <form id="bloodPressureForm">
+                <div class="input-group">
+                    <label for="datetime">記錄時間</label>
+                    <input type="datetime-local" id="datetime" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="bloodPressure">血壓值 (mmHg)</label>
+                    <div class="input-row">
+                        <input type="number" id="systolic" placeholder="收縮壓" min="50" max="250" required>
+                        <span class="separator">/</span>
+                        <input type="number" id="diastolic" placeholder="舒張壓" min="30" max="150" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="heartRate">心率 (bpm)</label>
+                    <input type="number" id="heartRate" placeholder="心跳速率" min="40" max="200">
+                </div>
+
+                <div class="input-group">
+                    <label for="notes">備註</label>
+                    <textarea id="notes" placeholder="記錄當時的身體狀況或其他註記..."></textarea>
+                </div>
+
+                <div class="btn-container">
+                    <button type="submit" class="btn btn-primary">📝 記錄血壓</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearForm()">🔄 清除</button>
+                </div>
+            </form>
+
+            <div id="status"></div>
+
+            <div class="config-section">
+                <h3>⚙️ Google Sheets API 設定</h3>
+                <input type="text" id="apiKey" class="config-input" placeholder="Google API Key">
+                <input type="text" id="spreadsheetId" class="config-input" placeholder="試算表 ID">
+                <input type="text" id="range" class="config-input" placeholder="範圍 (例: 工作表1!A:E)" value="工作表1!A:E">
+                <button type="button" class="btn btn-secondary" onclick="saveConfig()" style="width: 100%;">💾 儲存設定</button>
+                <button type="button" class="btn btn-secondary" onclick="testConnection()" style="width: 100%; margin-top: 5px;">🔗 測試連線</button>
+            </div>
+
+            <div class="recent-records">
+                <h3>📊 最近記錄</h3>
+                <div id="recentRecords"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 設定當前時間為預設值
+        document.getElementById('datetime').value = new Date().toISOString().slice(0, 16);
+
+        // 載入儲存的設定
+        window.onload = function() {
+            const savedApiKey = localStorage.getItem('googleApiKey');
+            const savedSpreadsheetId = localStorage.getItem('spreadsheetId');
+            const savedRange = localStorage.getItem('sheetRange');
+            
+            if (savedApiKey) document.getElementById('apiKey').value = savedApiKey;
+            if (savedSpreadsheetId) document.getElementById('spreadsheetId').value = savedSpreadsheetId;
+            if (savedRange) document.getElementById('range').value = savedRange;
+            
+            loadRecentRecords();
+        };
+
+        // 儲存 Google Sheets API 設定
+        function saveConfig() {
+            const apiKey = document.getElementById('apiKey').value;
+            const spreadsheetId = document.getElementById('spreadsheetId').value;
+            const range = document.getElementById('range').value;
+            
+            if (apiKey && spreadsheetId && range) {
+                localStorage.setItem('googleApiKey', apiKey);
+                localStorage.setItem('spreadsheetId', spreadsheetId);
+                localStorage.setItem('sheetRange', range);
+                showStatus('API 設定已儲存！', 'success');
+            } else {
+                showStatus('請填寫所有必要欄位', 'error');
+            }
+        }
+
+        // 測試 Google Sheets 連線
+        async function testConnection() {
+            const apiKey = localStorage.getItem('googleApiKey');
+            const spreadsheetId = localStorage.getItem('spreadsheetId');
+            const range = localStorage.getItem('sheetRange');
+
+            if (!apiKey || !spreadsheetId || !range) {
+                showStatus('請先完成 API 設定', 'error');
+                return;
+            }
+
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    showStatus('✅ Google Sheets 連線成功！', 'success');
+                } else {
+                    const error = await response.json();
+                    showStatus(`連線失敗: ${error.error.message}`, 'error');
+                }
+            } catch (error) {
+                showStatus('連線測試失敗，請檢查網路連線', 'error');
+            }
+        }
+
+        // 表單提交處理
+        document.getElementById('bloodPressureForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const datetime = document.getElementById('datetime').value;
+            const systolic = document.getElementById('systolic').value;
+            const diastolic = document.getElementById('diastolic').value;
+            const heartRate = document.getElementById('heartRate').value;
+            const notes = document.getElementById('notes').value;
+
+            // 建立記錄物件
+            const record = {
+                datetime: datetime,
+                systolic: parseInt(systolic),
+                diastolic: parseInt(diastolic),
+                heartRate: heartRate ? parseInt(heartRate) : '',
+                notes: notes,
+                timestamp: new Date().toISOString()
+            };
+
+            // 儲存到本地
+            saveRecordLocally(record);
+
+            // 嘗試同步到 Google Sheets
+            syncToGoogleSheets(record);
+
+            // 清除表單
+            clearForm();
+            
+            // 重新載入最近記錄
+            loadRecentRecords();
+        });
+
+        // 本地儲存記錄
+        function saveRecordLocally(record) {
+            let records = JSON.parse(localStorage.getItem('bloodPressureRecords') || '[]');
+            records.unshift(record); // 加到陣列開頭
+            // 只保留最近50筆記錄
+            records = records.slice(0, 50);
+            localStorage.setItem('bloodPressureRecords', JSON.stringify(records));
+        }
+
+        // 同步到 Google Sheets
+        async function syncToGoogleSheets(record) {
+            const apiKey = localStorage.getItem('googleApiKey');
+            const spreadsheetId = localStorage.getItem('spreadsheetId');
+            const range = localStorage.getItem('sheetRange');
+            
+            if (!apiKey || !spreadsheetId || !range) {
+                showStatus('記錄已儲存到本地，請完成 Google Sheets API 設定進行雲端同步', 'success');
+                return;
+            }
+
+            try {
+                // 格式化資料
+                const formattedDate = new Date(record.datetime).toLocaleString('zh-TW');
+                const values = [
+                    [
+                        formattedDate,
+                        record.systolic,
+                        record.diastolic,
+                        record.heartRate || '',
+                        record.notes || ''
+                    ]
+                ];
+
+                // 使用 Google Sheets API 新增資料
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=RAW&key=${apiKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        values: values
+                    })
+                });
+
+                if (response.ok) {
+                    showStatus('✅ 記錄已成功同步至 Google Sheets！', 'success');
+                } else {
+                    const error = await response.json();
+                    console.error('Google Sheets API Error:', error);
+                    showStatus('記錄已儲存到本地，Google Sheets 同步失敗', 'error');
+                }
+            } catch (error) {
+                console.error('Sync error:', error);
+                showStatus('記錄已儲存到本地，網路連線失敗', 'error');
+            }
+        }
+
+        // 載入最近記錄
+        function loadRecentRecords() {
+            const records = JSON.parse(localStorage.getItem('bloodPressureRecords') || '[]');
+            const container = document.getElementById('recentRecords');
+            
+            if (records.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center;">尚無記錄</p>';
+                return;
+            }
+
+            let html = '';
+            records.slice(0, 5).forEach(record => {
+                const date = new Date(record.datetime).toLocaleString('zh-TW');
+                html += `
+                    <div class="record-item">
+                        <div class="record-date">${date}</div>
+                        <div class="record-values">
+                            血壓: ${record.systolic}/${record.diastolic} mmHg
+                            ${record.heartRate ? `| 心率: ${record.heartRate} bpm` : ''}
+                            ${record.notes ? `| ${record.notes}` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // 清除表單
+        function clearForm() {
+            document.getElementById('bloodPressureForm').reset();
+            document.getElementById('datetime').value = new Date().toISOString().slice(0, 16);
+        }
+
+        // 顯示狀態訊息
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            
+            // 3秒後清除訊息
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = '';
+            }, 3000);
+        }
+
+        // 從 Google Sheets 讀取資料
+        async function loadFromGoogleSheets() {
+            const apiKey = localStorage.getItem('googleApiKey');
+            const spreadsheetId = localStorage.getItem('spreadsheetId');
+            const range = localStorage.getItem('sheetRange');
+
+            if (!apiKey || !spreadsheetId || !range) {
+                showStatus('請先完成 Google Sheets API 設定', 'error');
+                return;
+            }
+
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.values && data.values.length > 1) {
+                        // 跳過標題列，取最近10筆資料
+                        const records = data.values.slice(-10).reverse();
+                        displayCloudRecords(records);
+                        showStatus('✅ 已從 Google Sheets 載入資料', 'success');
+                    } else {
+                        showStatus('Google Sheets 中沒有資料', 'error');
+                    }
+                } else {
+                    const error = await response.json();
+                    showStatus(`載入失敗: ${error.error.message}`, 'error');
+                }
+            } catch (error) {
+                showStatus('載入失敗，請檢查網路連線', 'error');
+            }
+        }
+
+        // 顯示雲端記錄
+        function displayCloudRecords(records) {
+            const container = document.getElementById('cloudRecords');
+            
+            if (!container) {
+                // 建立雲端記錄區塊
+                const cloudSection = document.createElement('div');
+                cloudSection.className = 'recent-records';
+                cloudSection.innerHTML = `
+                    <h3>☁️ Google Sheets 記錄</h3>
+                    <div id="cloudRecords"></div>
+                `;
+                document.querySelector('.recent-records').after(cloudSection);
+            }
+
+            let html = '';
+            records.forEach(record => {
+                if (record.length >= 3) {
+                    html += `
+                        <div class="record-item">
+                            <div class="record-date">${record[0]}</div>
+                            <div class="record-values">
+                                血壓: ${record[1]}/${record[2]} mmHg
+                                ${record[3] ? `| 心率: ${record[3]} bpm` : ''}
+                                ${record[4] ? `| ${record[4]}` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            const cloudContainer = document.getElementById('cloudRecords');
+            if (cloudContainer) {
+                cloudContainer.innerHTML = html || '<p style="color: #999; text-align: center;">沒有雲端記錄</p>';
+            }
+        }
+        function exportRecords() {
+            const records = JSON.parse(localStorage.getItem('bloodPressureRecords') || '[]');
+            
+            if (records.length === 0) {
+                showStatus('沒有記錄可匯出', 'error');
+                return;
+            }
+
+            let csv = '日期時間,收縮壓,舒張壓,心率,備註\n';
+            records.forEach(record => {
+                csv += `"${record.datetime}","${record.systolic}","${record.diastolic}","${record.heartRate}","${record.notes}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `血壓記錄_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        // 添加載入雲端記錄按鈕到頁面
+        document.addEventListener('DOMContentLoaded', function() {
+            const loadBtn = document.createElement('button');
+            loadBtn.textContent = '☁️ 載入雲端記錄';
+            loadBtn.className = 'btn btn-secondary';
+            loadBtn.style.width = '100%';
+            loadBtn.style.marginTop = '10px';
+            loadBtn.onclick = loadFromGoogleSheets;
+            
+            const exportBtn = document.createElement('button');
+            exportBtn.textContent = '📤 匯出記錄';
+            exportBtn.className = 'btn btn-secondary';
+            exportBtn.style.width = '100%';
+            exportBtn.style.marginTop = '10px';
+            exportBtn.onclick = exportRecords;
+            
+            const recentSection = document.querySelector('.recent-records');
+            recentSection.appendChild(loadBtn);
+            recentSection.appendChild(exportBtn);
+        });
+    </script>
+</body>
+</html>
