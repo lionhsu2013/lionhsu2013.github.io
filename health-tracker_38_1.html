@@ -1,0 +1,1435 @@
+
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康數據記錄</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        
+        button {
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .record {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .record-date {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 14px;
+        }
+        
+        .record-delete {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .record-data {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .data-item {
+            text-align: center;
+        }
+        
+        .data-label {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .data-value {
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+            margin-top: 3px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+        
+        .status-message {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .google-setup {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #856404;
+        }
+        
+        .google-setup strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .analysis-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .analysis-card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .analysis-card p {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .health-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .status-good {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-bottom: 20px;
+        }
+        
+        .reminder-item {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .reminder-info {
+            flex: 1;
+        }
+        
+        .reminder-time {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .reminder-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .reminder-toggle {
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .reminder-toggle.active {
+            background: #667eea;
+        }
+        
+        .reminder-toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+        }
+        
+        .reminder-toggle.active::after {
+            left: 26px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .stat-unit {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🏥 健康數據記錄</h1>
+            <p class="subtitle">血壓 • 心跳 • 體重</p>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="record">📝 記錄</button>
+                <button class="tab" data-tab="chart">📊 圖表</button>
+                <button class="tab" data-tab="analysis">🔍 分析</button>
+                <button class="tab" data-tab="history">📜 歷史查詢</button>
+                <button class="tab" data-tab="reminder">⏰ 提醒</button>
+                <button class="tab" data-tab="settings">⚙️ 設定</button>
+            </div>
+            
+            <!-- 記錄標籤頁 -->
+            <div id="recordTab" class="tab-content active">
+                <div class="google-setup">
+                    <strong>⚠️ Google Sheets 設定說明：</strong>
+                    資料會自動儲存在本機，並在設定後自動同步到 Google Sheets
+                </div>
+                
+                <div id="statusMessage"></div>
+                
+                <div class="input-group">
+                    <label>收縮壓 (mmHg)</label>
+                    <input type="number" id="systolic" placeholder="例如：120">
+                </div>
+                
+                <div class="input-group">
+                    <label>舒張壓 (mmHg)</label>
+                    <input type="number" id="diastolic" placeholder="例如：80">
+                </div>
+                
+                <div class="input-group">
+                    <label>心跳 (次/分)</label>
+                    <input type="number" id="heartRate" placeholder="例如：72">
+                </div>
+                
+                <div class="input-group">
+                    <label>體重 (kg) - 選填</label>
+                    <input type="number" step="0.1" id="weight" placeholder="選填，可留空">
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn-primary" id="addRecordBtn">📝 記錄數據</button>
+                    <button class="btn-secondary" id="syncBtn">☁️ 同步</button>
+                    <button class="btn-secondary" id="exportBtn">📤 匯出</button>
+                </div>
+            </div>
+            
+            <!-- 圖表標籤頁 -->
+            <div id="chartTab" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">平均血壓</div>
+                        <div class="stat-value" id="avgBP">--</div>
+                        <div class="stat-unit">mmHg</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">平均心跳</div>
+                        <div class="stat-value" id="avgHR">--</div>
+                        <div class="stat-unit">次/分</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">當前體重</div>
+                        <div class="stat-value" id="currentWeight">--</div>
+                        <div class="stat-unit">kg</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">體重變化</div>
+                        <div class="stat-value" id="weightChange">--</div>
+                        <div class="stat-unit">kg</div>
+                    </div>
+                </div>
+                
+                <h3 style="color: #667eea; margin-bottom: 15px;">血壓趨勢</h3>
+                <div class="chart-container">
+                    <canvas id="bpChart"></canvas>
+                </div>
+                
+                <h3 style="color: #667eea; margin-bottom: 15px;">心跳趨勢</h3>
+                <div class="chart-container">
+                    <canvas id="hrChart"></canvas>
+                </div>
+                
+                <h3 style="color: #667eea; margin-bottom: 15px;">體重趨勢</h3>
+                <div class="chart-container">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 分析標籤頁 -->
+            <div id="analysisTab" class="tab-content">
+                <div id="healthStatus"></div>
+                <div id="analysisContent"></div>
+            </div>
+            
+            <!-- 歷史查詢標籤頁 -->
+            <div id="historyTab" class="tab-content">
+                <h3 style="color: #667eea; margin-bottom: 15px;">📜 完整歷史記錄</h3>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                    從 Google Sheets 載入所有裝置的完整記錄
+                </p>
+                
+                <button class="btn-primary" id="loadHistoryBtn" style="margin-bottom: 20px;">
+                    ☁️ 從雲端載入記錄
+                </button>
+                
+                <div id="historyStatus"></div>
+                
+                <div class="input-group">
+                    <label>📅 篩選日期範圍</label>
+                    <select id="dateFilter" style="margin-bottom: 15px;">
+                        <option value="all">全部記錄</option>
+                        <option value="7">最近 7 天</option>
+                        <option value="30">最近 30 天</option>
+                        <option value="90">最近 3 個月</option>
+                        <option value="180">最近 6 個月</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <div style="color: #667eea; font-weight: 600;" id="historyCount">共 0 筆記錄</div>
+                    <button class="btn-secondary" id="exportHistoryBtn" style="padding: 8px 16px; font-size: 14px;">
+                        📤 匯出
+                    </button>
+                </div>
+                
+                <div id="fullHistoryList"></div>
+            </div>
+            
+            <!-- 提醒標籤頁 -->
+            <div id="reminderTab" class="tab-content">
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                    設定每日提醒時間，讓我們協助您養成量測習慣
+                </p>
+                
+                <div class="input-group">
+                    <label>⏰ 早上提醒時間</label>
+                    <input type="time" id="morningTime" value="08:00">
+                </div>
+                
+                <div class="reminder-item">
+                    <div class="reminder-info">
+                        <div class="reminder-time" id="morningTimeDisplay">08:00</div>
+                        <div class="reminder-label">早上量測提醒</div>
+                    </div>
+                    <div class="reminder-toggle" id="morningToggle" data-type="morning"></div>
+                </div>
+                
+                <div class="input-group">
+                    <label>⏰ 晚上提醒時間</label>
+                    <input type="time" id="eveningTime" value="20:00">
+                </div>
+                
+                <div class="reminder-item">
+                    <div class="reminder-info">
+                        <div class="reminder-time" id="eveningTimeDisplay">20:00</div>
+                        <div class="reminder-label">晚上量測提醒</div>
+                    </div>
+                    <div class="reminder-toggle" id="eveningToggle" data-type="evening"></div>
+                </div>
+                
+                <button class="btn-primary" id="saveRemindersBtn">💾 儲存提醒設定</button>
+                
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 10px; margin-top: 20px; font-size: 13px; color: #1565c0;">
+                    <strong>📱 提醒功能說明：</strong><br>
+                    由於瀏覽器限制，提醒功能需要您允許通知權限。點擊儲存後，系統會請求權限。請確保手機設定中也允許瀏覽器的通知。
+                </div>
+            </div>
+            
+            <!-- 設定標籤頁 -->
+            <div id="settingsTab" class="tab-content">
+                <h3 style="color: #667eea; margin-bottom: 15px;">🔐 驗證碼設定</h3>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                    為了保護您的資料安全，同步到 Google Sheets 需要驗證碼
+                </p>
+                
+                <div class="input-group">
+                    <label>驗證碼</label>
+                    <input type="text" id="authCodeInput" placeholder="請輸入家庭驗證碼">
+                </div>
+                
+                <button class="btn-primary" id="saveAuthCodeBtn">💾 儲存驗證碼</button>
+                
+                <div id="authStatus" style="margin-top: 15px;"></div>
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin-top: 20px; font-size: 13px; color: #856404;">
+                    <strong>💡 提示：</strong><br>
+                    請向管理員索取驗證碼。驗證碼儲存在您的裝置上，不會被其他人看到。
+                </div>
+                
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #e0e0e0;">
+                
+                <h3 style="color: #667eea; margin-bottom: 15px;">📊 資料管理</h3>
+                
+                <button class="btn-secondary" id="clearDataBtn" style="width: 100%; background: #ff4757; color: white;">
+                    🗑️ 清除所有本機資料
+                </button>
+                
+                <div style="background: #f8d7da; padding: 15px; border-radius: 10px; margin-top: 15px; font-size: 13px; color: #721c24;">
+                    <strong>⚠️ 警告：</strong><br>
+                    清除本機資料後，您的歷史記錄將從此裝置移除（Google Sheets 的資料不受影響）
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📊 最近記錄（本機前 10 筆）</h2>
+            <div id="recordsList"></div>
+        </div>
+    </div>
+
+    <script>
+        let healthRecords = [];
+        let fullHistoryRecords = []; // 從雲端載入的完整記錄
+        let bpChart, hrChart, weightChart;
+        let reminders = {
+            morning: { enabled: false, time: '08:00' },
+            evening: { enabled: false, time: '20:00' }
+        };
+        let reminderIntervals = [];
+        
+        // 請在此填入你的 Google Apps Script Web App URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYWAw6lOkgStc_LdlX5wEFk5rw03Qp_jOjQK62wkfowTa8uqI2467G6ZFN9PL1F9Rl/exec';
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDataFromLocalStorage();
+            initTabs();
+            initButtons();
+            renderRecords();
+            loadRemindersFromLocalStorage();
+            checkAuthCode();
+        });
+        
+        // 檢查是否已設定驗證碼
+        function checkAuthCode() {
+            const authCode = localStorage.getItem('authCode');
+            if (!authCode) {
+                // 如果沒有驗證碼，自動切換到設定頁面
+                setTimeout(() => {
+                    const settingsTab = document.querySelector('[data-tab="settings"]');
+                    if (settingsTab) {
+                        settingsTab.click();
+                        showStatus('⚠️ 請先設定驗證碼以啟用同步功能', true);
+                    }
+                }, 500);
+            }
+        }
+        
+        // 從 localStorage 載入資料
+        function loadDataFromLocalStorage() {
+            try {
+                const savedRecords = localStorage.getItem('healthRecords');
+                if (savedRecords) {
+                    healthRecords = JSON.parse(savedRecords);
+                }
+            } catch (error) {
+                console.error('載入資料失敗:', error);
+                healthRecords = [];
+            }
+        }
+        
+        // 儲存資料到 localStorage
+        function saveDataToLocalStorage() {
+            try {
+                localStorage.setItem('healthRecords', JSON.stringify(healthRecords));
+            } catch (error) {
+                console.error('儲存資料失敗:', error);
+                showStatus('❌ 資料儲存失敗', true);
+            }
+        }
+        
+        // 載入提醒設定
+        function loadRemindersFromLocalStorage() {
+            try {
+                const savedReminders = localStorage.getItem('reminders');
+                if (savedReminders) {
+                    reminders = JSON.parse(savedReminders);
+                }
+            } catch (error) {
+                console.error('載入提醒設定失敗:', error);
+            }
+            
+            document.getElementById('morningTime').value = reminders.morning.time;
+            document.getElementById('eveningTime').value = reminders.evening.time;
+            updateTimeDisplay();
+            
+            if (reminders.morning.enabled) {
+                document.getElementById('morningToggle').classList.add('active');
+                setupReminderNotifications();
+            }
+            if (reminders.evening.enabled) {
+                document.getElementById('eveningToggle').classList.add('active');
+                setupReminderNotifications();
+            }
+        }
+        
+        // 儲存提醒設定
+        function saveRemindersToLocalStorage() {
+            try {
+                localStorage.setItem('reminders', JSON.stringify(reminders));
+            } catch (error) {
+                console.error('儲存提醒設定失敗:', error);
+            }
+        }
+        
+        function initTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+        }
+        
+        function initButtons() {
+            document.getElementById('addRecordBtn').addEventListener('click', addRecord);
+            document.getElementById('syncBtn').addEventListener('click', manualSync);
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+            document.getElementById('saveRemindersBtn').addEventListener('click', saveReminders);
+            document.getElementById('saveAuthCodeBtn').addEventListener('click', saveAuthCode);
+            document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
+            document.getElementById('loadHistoryBtn').addEventListener('click', loadFullHistory);
+            document.getElementById('exportHistoryBtn').addEventListener('click', exportFullHistory);
+            document.getElementById('dateFilter').addEventListener('change', filterHistoryByDate);
+            
+            document.querySelectorAll('.reminder-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const type = this.getAttribute('data-type');
+                    toggleReminder(type);
+                });
+            });
+            
+            document.getElementById('morningTime').addEventListener('change', updateTimeDisplay);
+            document.getElementById('eveningTime').addEventListener('change', updateTimeDisplay);
+            
+            // 載入已儲存的驗證碼到輸入框
+            const savedAuthCode = localStorage.getItem('authCode');
+            if (savedAuthCode) {
+                document.getElementById('authCodeInput').value = savedAuthCode;
+                updateAuthStatus(true);
+            }
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            if (tabName === 'chart') {
+                updateCharts();
+            } else if (tabName === 'analysis') {
+                updateAnalysis();
+            }
+        }
+        
+        function showStatus(message, isError = false) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.className = isError ? 'status-message status-error' : 'status-message status-success';
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        function addRecord() {
+            const systolic = document.getElementById('systolic').value;
+            const diastolic = document.getElementById('diastolic').value;
+            const heartRate = document.getElementById('heartRate').value;
+            const weight = document.getElementById('weight').value;
+            
+            // 只檢查血壓和心跳，體重可選填
+            if (!systolic || !diastolic || !heartRate) {
+                showStatus('請填寫血壓和心跳', true);
+                return;
+            }
+            
+            const record = {
+                id: Date.now(),
+                date: new Date().toLocaleString('zh-TW'),
+                timestamp: Date.now(),
+                systolic: parseInt(systolic),
+                diastolic: parseInt(diastolic),
+                heartRate: parseInt(heartRate),
+                weight: weight ? parseFloat(weight) : null
+            };
+            
+            healthRecords.unshift(record);
+            
+            // 儲存到 localStorage
+            saveDataToLocalStorage();
+            
+            document.getElementById('systolic').value = '';
+            document.getElementById('diastolic').value = '';
+            document.getElementById('heartRate').value = '';
+            document.getElementById('weight').value = '';
+            
+            renderRecords();
+            showStatus('✅ 記錄已新增');
+            
+            // 自動上傳這一筆到 Google Sheets
+            const authCode = localStorage.getItem('authCode');
+            if (GOOGLE_SCRIPT_URL && authCode) {
+                uploadSingleRecord(record);
+            } else {
+                showStatus('⚠️ 未設定驗證碼，資料僅儲存在本機', false);
+            }
+        }
+        
+        function deleteRecord(id) {
+            if (confirm('確定要刪除這筆記錄嗎？')) {
+                healthRecords = healthRecords.filter(r => r.id !== id);
+                
+                // 更新 localStorage
+                saveDataToLocalStorage();
+                
+                renderRecords();
+                showStatus('🗑️ 記錄已刪除');
+                
+                // 同步到 Google Sheets
+                if (GOOGLE_SCRIPT_URL) {
+                    syncToGoogle();
+                }
+            }
+        }
+        
+        function renderRecords() {
+            const container = document.getElementById('recordsList');
+            
+            if (healthRecords.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 尚無記錄<br>開始記錄你的健康數據吧！</div>';
+                return;
+            }
+            
+            // 只顯示最近 10 筆
+            const recentRecords = healthRecords.slice(0, 10);
+            
+            container.innerHTML = recentRecords.map(record => `
+                <div class="record">
+                    <div class="record-header">
+                        <span class="record-date">${record.date}</span>
+                        <button class="record-delete" onclick="deleteRecord(${record.id})">刪除</button>
+                    </div>
+                    <div class="record-data">
+                        <div class="data-item">
+                            <div class="data-label">血壓</div>
+                            <div class="data-value">${record.systolic}/${record.diastolic}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-label">心跳</div>
+                            <div class="data-value">${record.heartRate}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-label">體重</div>
+                            <div class="data-value">${record.weight !== null ? record.weight : '--'}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            if (healthRecords.length > 10) {
+                container.innerHTML += '<div style="text-align: center; color: #666; padding: 15px; font-size: 14px;">⬆️ 顯示最近 10 筆，完整記錄請至「歷史查詢」</div>';
+            }
+        }
+        
+        // 上傳單筆記錄到 Google Sheets
+        async function uploadSingleRecord(record) {
+            const authCode = localStorage.getItem('authCode');
+            
+            if (!authCode) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: JSON.stringify({
+                        authCode: authCode,
+                        record: record
+                    }),
+                    redirect: 'follow'
+                });
+                
+                const result = await response.text();
+                console.log('上傳回應:', result);
+                
+                try {
+                    const jsonResult = JSON.parse(result);
+                    if (jsonResult.status === 'success') {
+                        showStatus('☁️ 已同步到雲端');
+                    } else if (jsonResult.status === 'error') {
+                        if (jsonResult.message.includes('驗證碼')) {
+                            showStatus('❌ ' + jsonResult.message, true);
+                            updateAuthStatus(false);
+                        } else {
+                            showStatus('⚠️ ' + jsonResult.message, true);
+                        }
+                    }
+                } catch (e) {
+                    showStatus('☁️ 已同步到雲端');
+                }
+            } catch (error) {
+                console.error('上傳錯誤:', error);
+                showStatus('⚠️ 同步失敗，資料已儲存本機', true);
+            }
+        }
+        
+        // 手動同步按鈕（保留作為備用）
+        async function manualSync() {
+            showStatus('💡 資料會在記錄時自動上傳，無需手動同步', false);
+        }
+        
+        async function syncToGoogle() {
+            // 這個函數現在主要用於刪除後同步
+            // 實際上不再使用，因為我們改用附加模式
+            showStatus('💡 同步功能已改為自動模式', false);
+        }
+        
+        function exportData() {
+            if (healthRecords.length === 0) {
+                showStatus('❌ 沒有資料可以匯出', true);
+                return;
+            }
+            
+            const csv = [
+                ['日期', '收縮壓', '舒張壓', '心跳', '體重'],
+                ...healthRecords.map(r => [r.date, r.systolic, r.diastolic, r.heartRate, r.weight])
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `健康記錄_${new Date().toLocaleDateString('zh-TW')}.csv`;
+            link.click();
+            
+            showStatus('📤 資料已匯出');
+        }
+        
+        function updateCharts() {
+            if (healthRecords.length === 0) {
+                document.getElementById('avgBP').textContent = '--';
+                document.getElementById('avgHR').textContent = '--';
+                document.getElementById('currentWeight').textContent = '--';
+                document.getElementById('weightChange').textContent = '--';
+                return;
+            }
+            
+            const recentRecords = healthRecords.slice(0, 10).reverse();
+            const labels = recentRecords.map(r => {
+                const date = new Date(r.timestamp);
+                return `${date.getMonth()+1}/${date.getDate()}`;
+            });
+            
+            // 更新統計數據
+            const avgSystolic = Math.round(recentRecords.reduce((sum, r) => sum + r.systolic, 0) / recentRecords.length);
+            const avgDiastolic = Math.round(recentRecords.reduce((sum, r) => sum + r.diastolic, 0) / recentRecords.length);
+            const avgHR = Math.round(recentRecords.reduce((sum, r) => sum + r.heartRate, 0) / recentRecords.length);
+            const currentW = recentRecords[recentRecords.length - 1].weight;
+            const firstW = recentRecords[0].weight;
+            const weightDiff = (currentW - firstW).toFixed(1);
+            
+            document.getElementById('avgBP').textContent = `${avgSystolic}/${avgDiastolic}`;
+            document.getElementById('avgHR').textContent = avgHR;
+            document.getElementById('currentWeight').textContent = currentW;
+            document.getElementById('weightChange').textContent = weightDiff > 0 ? `+${weightDiff}` : weightDiff;
+            
+            // 血壓圖表
+            if (bpChart) bpChart.destroy();
+            const bpCtx = document.getElementById('bpChart').getContext('2d');
+            bpChart = new Chart(bpCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '收縮壓',
+                        data: recentRecords.map(r => r.systolic),
+                        borderColor: '#f5576c',
+                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: '舒張壓',
+                        data: recentRecords.map(r => r.diastolic),
+                        borderColor: '#4facfe',
+                        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true }
+                    },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+            
+            // 心跳圖表
+            if (hrChart) hrChart.destroy();
+            const hrCtx = document.getElementById('hrChart').getContext('2d');
+            hrChart = new Chart(hrCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '心跳',
+                        data: recentRecords.map(r => r.heartRate),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true }
+                    },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+            
+            // 體重圖表
+            if (weightChart) weightChart.destroy();
+            const weightCtx = document.getElementById('weightChart').getContext('2d');
+            weightChart = new Chart(weightCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '體重',
+                        data: recentRecords.map(r => r.weight),
+                        borderColor: '#f093fb',
+                        backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true }
+                    },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+        }
+        
+        function updateAnalysis() {
+            if (healthRecords.length === 0) {
+                document.getElementById('analysisContent').innerHTML = '<div class="empty-state">📭 尚無數據可供分析<br>請先記錄您的健康數據</div>';
+                document.getElementById('healthStatus').innerHTML = '';
+                return;
+            }
+            
+            const latest = healthRecords[0];
+            let statusHTML = '';
+            let analysisHTML = '';
+            
+            // 血壓分析
+            if (latest.systolic >= 140 || latest.diastolic >= 90) {
+                statusHTML += '<div class="health-status status-danger">⚠️ 血壓偏高，建議諮詢醫師</div>';
+                analysisHTML += `
+                    <div class="analysis-card">
+                        <h3>🩺 血壓分析</h3>
+                        <p>您的最新血壓為 ${latest.systolic}/${latest.diastolic} mmHg，數值偏高。高血壓可能增加心血管疾病風險。建議：減少鹽分攝取、規律運動、保持正常體重，並定期追蹤血壓變化。如持續偏高，請及時就醫。</p>
+                    </div>
+                `;
+            } else if (latest.systolic >= 120 || latest.diastolic >= 80) {
+                statusHTML += '<div class="health-status status-warning">⚡ 血壓稍高，請持續監測</div>';
+                analysisHTML += `
+                    <div class="analysis-card">
+                        <h3>🩺 血壓分析</h3>
+                        <p>您的最新血壓為 ${latest.systolic}/${latest.diastolic} mmHg，屬於血壓前期。建議調整生活方式：維持健康飲食、規律運動、減輕壓力，並持續監測血壓變化。</p>
+                    </div>
+                `;
+            } else {
+                statusHTML += '<div class="health-status status-good">✅ 血壓正常</div>';
+            }
+            
+            // 心跳分析
+            if (latest.heartRate > 100) {
+                statusHTML += '<div class="health-status status-warning">⚡ 心跳偏快</div>';
+                analysisHTML += `
+                    <div class="analysis-card">
+                        <h3>💓 心跳分析</h3>
+                        <p>您的心跳為 ${latest.heartRate} 次/分，略高於正常範圍。可能原因包括：緊張、咖啡因、缺乏睡眠或運動不足。建議充足休息、適度運動、減少刺激性飲料。如持續快速或伴隨不適，請就醫檢查。</p>
+                    </div>
+                `;
+            } else if (latest.heartRate < 60) {
+                statusHTML += '<div class="health-status status-warning">⚡ 心跳偏慢</div>';
+                analysisHTML += `
+                    <div class="analysis-card">
+                        <h3>💓 心跳分析</h3>
+                        <p>您的心跳為 ${latest.heartRate} 次/分，低於正常範圍。運動員可能有較低的靜息心率，但如果您不常運動且伴隨疲勞或暈眩，建議諮詢醫師。</p>
+                    </div>
+                `;
+            } else {
+                statusHTML += '<div class="health-status status-good">✅ 心跳正常</div>';
+            }
+            
+            // 體重趨勢分析
+            if (healthRecords.length >= 3) {
+                const recent3 = healthRecords.slice(0, 3);
+                const weightTrend = recent3[0].weight - recent3[2].weight;
+                
+                if (Math.abs(weightTrend) > 2) {
+                    const direction = weightTrend > 0 ? '增加' : '減少';
+                    analysisHTML += `
+                        <div class="analysis-card">
+                            <h3>⚖️ 體重趨勢</h3>
+                            <p>最近三次記錄顯示體重${direction}了 ${Math.abs(weightTrend).toFixed(1)} kg。${weightTrend > 0 ? '體重快速增加可能與飲食、運動減少或水分滯留有關。' : '體重快速減少需注意營養均衡，避免過度節食。'}建議維持健康的生活方式，必要時諮詢營養師。</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            // 綜合建議
+            analysisHTML += `
+                <div class="analysis-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h3>💡 健康建議</h3>
+                    <p>定期量測血壓、心跳和體重是維護健康的重要習慣。建議每天固定時間量測，保持記錄的一致性。同時注意：均衡飲食、規律運動、充足睡眠、適度減壓。如有任何異常或不適，請及時就醫。</p>
+                </div>
+            `;
+            
+            document.getElementById('healthStatus').innerHTML = statusHTML;
+            document.getElementById('analysisContent').innerHTML = analysisHTML;
+        }
+        
+        function toggleReminder(type) {
+            reminders[type].enabled = !reminders[type].enabled;
+            const toggle = document.getElementById(type + 'Toggle');
+            
+            if (reminders[type].enabled) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+            
+            // 儲存提醒設定
+            saveRemindersToLocalStorage();
+        }
+        
+        function updateTimeDisplay() {
+            const morningTime = document.getElementById('morningTime').value;
+            const eveningTime = document.getElementById('eveningTime').value;
+            
+            document.getElementById('morningTimeDisplay').textContent = morningTime;
+            document.getElementById('eveningTimeDisplay').textContent = eveningTime;
+        }
+        
+
+        
+        async function saveReminders() {
+            reminders.morning.time = document.getElementById('morningTime').value;
+            reminders.evening.time = document.getElementById('eveningTime').value;
+            
+            // 儲存到 localStorage
+            saveRemindersToLocalStorage();
+            
+            // 請求通知權限
+            if ('Notification' in window) {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    setupReminderNotifications();
+                    showStatus('✅ 提醒設定已儲存');
+                } else {
+                    showStatus('❌ 需要通知權限才能設定提醒', true);
+                }
+            } else {
+                showStatus('❌ 您的瀏覽器不支援通知功能', true);
+            }
+        }
+        
+        function setupReminderNotifications() {
+            // 清除舊的檢查
+            reminderIntervals.forEach(interval => clearInterval(interval));
+            reminderIntervals = [];
+            
+            // 每分鐘檢查是否該發送通知
+            const checkInterval = setInterval(() => {
+                const now = new Date();
+                const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                
+                if (reminders.morning.enabled && currentTime === reminders.morning.time) {
+                    sendNotification('⏰ 早安！該量測健康數據了', '記得測量血壓、心跳和體重喔！');
+                }
+                
+                if (reminders.evening.enabled && currentTime === reminders.evening.time) {
+                    sendNotification('⏰ 晚安！該量測健康數據了', '記得測量血壓、心跳和體重喔！');
+                }
+            }, 60000); // 每分鐘檢查一次
+            
+            reminderIntervals.push(checkInterval);
+        }
+        
+        function sendNotification(title, body) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: '🏥',
+                    badge: '🏥'
+                });
+            }
+        }
+        
+        // 儲存驗證碼
+        function saveAuthCode() {
+            const authCode = document.getElementById('authCodeInput').value.trim();
+            
+            if (!authCode) {
+                showStatus('❌ 請輸入驗證碼', true);
+                return;
+            }
+            
+            localStorage.setItem('authCode', authCode);
+            updateAuthStatus(true);
+            showStatus('✅ 驗證碼已儲存');
+        }
+        
+        // 更新驗證碼狀態顯示
+        function updateAuthStatus(isValid) {
+            const statusDiv = document.getElementById('authStatus');
+            if (isValid) {
+                statusDiv.innerHTML = '<div class="health-status status-good">✅ 驗證碼已設定，可以同步資料</div>';
+            } else {
+                statusDiv.innerHTML = '<div class="health-status status-danger">❌ 驗證碼未設定或錯誤</div>';
+            }
+        }
+        
+        // 清除所有資料
+        function clearAllData() {
+            if (confirm('確定要清除所有本機資料嗎？\n\n這將刪除：\n• 所有健康記錄\n• 提醒設定\n• 驗證碼\n\n（Google Sheets 中的資料不受影響）')) {
+                localStorage.clear();
+                healthRecords = [];
+                reminders = {
+                    morning: { enabled: false, time: '08:00' },
+                    evening: { enabled: false, time: '20:00' }
+                };
+                renderRecords();
+                document.getElementById('authCodeInput').value = '';
+                updateAuthStatus(false);
+                showStatus('🗑️ 已清除所有本機資料');
+            }
+        }
+
+        //start
+
+                // 清除所有資料
+        function clearAllData() {
+            if (confirm('確定要清除所有本機資料嗎？\n\n這將刪除：\n• 所有健康記錄\n• 提醒設定\n• 驗證碼\n\n（Google Sheets 中的資料不受影響）')) {
+                localStorage.clear();
+                healthRecords = [];
+                fullHistoryRecords = [];
+                reminders = {
+                    morning: { enabled: false, time: '08:00' },
+                    evening: { enabled: false, time: '20:00' }
+                };
+                renderRecords();
+                document.getElementById('authCodeInput').value = '';
+                updateAuthStatus(false);
+                showStatus('🗑️ 已清除所有本機資料');
+            }
+        }
+        
+        // ==================== 歷史查詢功能 ====================
+        
+        // 從 Google Sheets 載入完整歷史記錄
+        async function loadFullHistory() {
+            const authCode = localStorage.getItem('authCode');
+            
+            if (!authCode) {
+                showHistoryStatus('❌ 請先在設定中輸入驗證碼', true);
+                document.querySelector('[data-tab="settings"]').click();
+                return;
+            }
+            
+            if (!GOOGLE_SCRIPT_URL) {
+                showHistoryStatus('❌ 請先設定 Google Sheets URL', true);
+                return;
+            }
+            
+            try {
+                showHistoryStatus('⏳ 正在從雲端載入記錄...', false);
+                
+                const url = `${GOOGLE_SCRIPT_URL}?authCode=${encodeURIComponent(authCode)}`;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+                
+                const result = await response.text();
+                console.log('載入回應:', result);
+                
+                const jsonResult = JSON.parse(result);
+                
+                if (jsonResult.status === 'success') {
+                    fullHistoryRecords = jsonResult.records;
+                    renderFullHistory(fullHistoryRecords);
+                    showHistoryStatus(`✅ 已載入 ${fullHistoryRecords.length} 筆記錄`, false);
+                } else {
+                    showHistoryStatus('❌ ' + jsonResult.message, true);
+                }
+                
+            } catch (error) {
+                console.error('載入錯誤:', error);
+                showHistoryStatus('❌ 載入失敗: ' + error.message, true);
+            }
+        }
+        
+        // 顯示歷史查詢狀態訊息
+        function showHistoryStatus(message, isError) {
+            const statusDiv = document.getElementById('historyStatus');
+            statusDiv.className = isError ? 'status-message status-error' : 'status-message status-success';
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 渲染完整歷史記錄
+        function renderFullHistory(records) {
+            const container = document.getElementById('fullHistoryList');
+            const countDiv = document.getElementById('historyCount');
+            
+            if (!records || records.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 尚無雲端記錄<br>請先記錄一些數據</div>';
+                countDiv.textContent = '共 0 筆記錄';
+                return;
+            }
+            
+            countDiv.textContent = `共 ${records.length} 筆記錄`;
+            
+            container.innerHTML = records.map(record => {
+                // 格式化日期
+                let formattedDate = record.date;
+                if (record.date) {
+                    try {
+                        const date = new Date(record.date);
+                        if (!isNaN(date.getTime())) {
+                            formattedDate = date.toLocaleString('zh-TW', {
+                                year: 'numeric',
+                                month: 'numeric',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true
+                            });
+                        }
+                    } catch (e) {
+                        // 如果日期轉換失敗，保持原樣
+                        console.error('日期轉換錯誤:', e);
+                    }
+                }
+                
+                return `
+                    <div class="record">
+                        <div class="record-header">
+                            <span class="record-date">${formattedDate}</span>
+                        </div>
+                        <div class="record-data">
+                            <div class="data-item">
+                                <div class="data-label">血壓</div>
+                                <div class="data-value">${record.systolic}/${record.diastolic}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">心跳</div>
+                                <div class="data-value">${record.heartRate}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">體重</div>
+                                <div class="data-value">${record.weight ? record.weight : '--'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+
+
+        // 按日期篩選歷史記錄
+        function filterHistoryByDate() {
+            const filterValue = document.getElementById('dateFilter').value;
+            
+            if (!fullHistoryRecords || fullHistoryRecords.length === 0) {
+                showHistoryStatus('⚠️ 請先載入記錄', true);
+                return;
+            }
+            
+            if (filterValue === 'all') {
+                renderFullHistory(fullHistoryRecords);
+                return;
+            }
+            
+            const days = parseInt(filterValue);
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            
+            const filtered = fullHistoryRecords.filter(record => {
+                // 嘗試解析日期
+                const recordDate = new Date(record.date);
+                return recordDate >= cutoffDate;
+            });
+            
+            renderFullHistory(filtered);
+        }
+        
+        // 匯出完整歷史記錄
+        function exportFullHistory() {
+            if (!fullHistoryRecords || fullHistoryRecords.length === 0) {
+                showHistoryStatus('❌ 請先載入記錄', true);
+                return;
+            }
+            
+            const csv = [
+                ['日期', '收縮壓', '舒張壓', '心跳', '體重'],
+                ...fullHistoryRecords.map(r => [
+                    r.date, 
+                    r.systolic, 
+                    r.diastolic, 
+                    r.heartRate, 
+                    r.weight || ''
+                ])
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `完整健康記錄_${new Date().toLocaleDateString('zh-TW')}.csv`;
+            link.click();
+            
+            showHistoryStatus('📤 已匯出 ' + fullHistoryRecords.length + ' 筆記錄', false);
+        }
+    
+    </script>
+</body>
+</html>
