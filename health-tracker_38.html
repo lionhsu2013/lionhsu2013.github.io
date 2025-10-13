@@ -1,6 +1,4 @@
 
-</body>
-</html><!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -477,28 +475,29 @@
             <div id="historyTab" class="tab-content">
                 <h3 style="color: #667eea; margin-bottom: 15px;">📜 完整歷史記錄</h3>
                 <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
-                    從 Google Sheets 載入所有裝置的完整記錄
+                    從 Google Sheets 載入記錄
                 </p>
                 
+                <div class="input-group">
+                    <label>📅 選擇日期範圍</label>
+                    <select id="dateFilter" style="margin-bottom: 15px;">
+                        <option value="7">最近 7 天</option>
+                        <option value="30" selected>最近 30 天</option>
+                        <option value="90">最近 3 個月</option>
+                        <option value="180">最近 6 個月</option>
+                        <option value="365">最近 1 年</option>
+                        <option value="all">全部記錄</option>
+                    </select>
+                </div>
+                
                 <button class="btn-primary" id="loadHistoryBtn" style="margin-bottom: 20px;">
-                    ☁️ 從雲端載入記錄
+                    ☁️ 載入所選範圍記錄
                 </button>
                 
                 <div id="historyStatus"></div>
                 
-                <div class="input-group">
-                    <label>📅 篩選日期範圍</label>
-                    <select id="dateFilter" style="margin-bottom: 15px;">
-                        <option value="all">全部記錄</option>
-                        <option value="7">最近 7 天</option>
-                        <option value="30">最近 30 天</option>
-                        <option value="90">最近 3 個月</option>
-                        <option value="180">最近 6 個月</option>
-                    </select>
-                </div>
-                
                 <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                    <div style="color: #667eea; font-weight: 600;" id="historyCount">共 0 筆記錄</div>
+                    <div style="color: #667eea; font-weight: 600;" id="historyCount">尚未載入</div>
                     <button class="btn-secondary" id="exportHistoryBtn" style="padding: 8px 16px; font-size: 14px;">
                         📤 匯出
                     </button>
@@ -506,7 +505,7 @@
                 
                 <div id="fullHistoryList"></div>
             </div>
-            
+
             <!-- 提醒標籤頁 -->
             <div id="reminderTab" class="tab-content">
                 <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
@@ -702,7 +701,7 @@
             document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
             document.getElementById('loadHistoryBtn').addEventListener('click', loadFullHistory);
             document.getElementById('exportHistoryBtn').addEventListener('click', exportFullHistory);
-            document.getElementById('dateFilter').addEventListener('change', filterHistoryByDate);
+            //document.getElementById('dateFilter').addEventListener('change', filterHistoryByDate);
             
             document.querySelectorAll('.reminder-toggle').forEach(toggle => {
                 toggle.addEventListener('click', function() {
@@ -1261,48 +1260,65 @@
         
         // 從 Google Sheets 載入完整歷史記錄
         async function loadFullHistory() {
-            const authCode = localStorage.getItem('authCode');
+        const authCode = localStorage.getItem('authCode');
+    
+    if (!authCode) {
+        showHistoryStatus('❌ 請先在設定中輸入驗證碼', true);
+        document.querySelector('[data-tab="settings"]').click();
+        return;
+    }
+    
+    if (!GOOGLE_SCRIPT_URL) {
+        showHistoryStatus('❌ 請先設定 Google Sheets URL', true);
+        return;
+    }
+    
+    // 讀取選擇的日期範圍
+    const filterValue = document.getElementById('dateFilter').value;
+    let filterText = '';
+    
+    if (filterValue === 'all') {
+        filterText = '全部記錄';
+    } else {
+        const days = parseInt(filterValue);
+        filterText = `最近 ${days} 天`;
+    }
+    
+    try {
+        showHistoryStatus(`⏳ 正在從雲端載入${filterText}...`, false);
+        
+        // 將日期範圍參數傳送給 Apps Script
+        const url = `${GOOGLE_SCRIPT_URL}?authCode=${encodeURIComponent(authCode)}&days=${encodeURIComponent(filterValue)}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            redirect: 'follow'
+        });
+        
+        const result = await response.text();
+        console.log('載入回應:', result);
+        
+        const jsonResult = JSON.parse(result);
+        
+        if (jsonResult.status === 'success') {
+            fullHistoryRecords = jsonResult.records;
+            renderFullHistory(fullHistoryRecords);
             
-            if (!authCode) {
-                showHistoryStatus('❌ 請先在設定中輸入驗證碼', true);
-                document.querySelector('[data-tab="settings"]').click();
-                return;
+            // 顯示篩選資訊
+            let statusMsg = `✅ 已載入 ${jsonResult.filtered || fullHistoryRecords.length} 筆記錄`;
+            if (jsonResult.total && jsonResult.filtered && jsonResult.filtered !== jsonResult.total) {
+                statusMsg += ` （共 ${jsonResult.total} 筆，篩選後 ${jsonResult.filtered} 筆）`;
             }
-            
-            if (!GOOGLE_SCRIPT_URL) {
-                showHistoryStatus('❌ 請先設定 Google Sheets URL', true);
-                return;
-            }
-            
-            try {
-                showHistoryStatus('⏳ 正在從雲端載入記錄...', false);
-                
-                const url = `${GOOGLE_SCRIPT_URL}?authCode=${encodeURIComponent(authCode)}`;
-                const response = await fetch(url, {
-                    method: 'GET',
-                    redirect: 'follow'
-                });
-                
-                const result = await response.text();
-                console.log('載入回應:', result);
-                
-                const jsonResult = JSON.parse(result);
-                
-                if (jsonResult.status === 'success') {
-                    fullHistoryRecords = jsonResult.records;
-                    renderFullHistory(fullHistoryRecords);
-                    showHistoryStatus(`✅ 已載入 ${fullHistoryRecords.length} 筆記錄`, false);
-                } else {
-                    showHistoryStatus('❌ ' + jsonResult.message, true);
-                }
-                
-            } catch (error) {
-                console.error('載入錯誤:', error);
-                showHistoryStatus('❌ 載入失敗: ' + error.message, true);
-            }
+            showHistoryStatus(statusMsg, false);
+        } else {
+            showHistoryStatus('❌ ' + jsonResult.message, true);
         }
         
-        // 顯示歷史查詢狀態訊息
+    } catch (error) {
+        console.error('載入錯誤:', error);
+        showHistoryStatus('❌ 載入失敗: ' + error.message, true);
+    }
+}
+        // 顯示
         function showHistoryStatus(message, isError) {
             const statusDiv = document.getElementById('historyStatus');
             statusDiv.className = isError ? 'status-message status-error' : 'status-message status-success';
@@ -1374,6 +1390,8 @@
             }).join('');
         }
         
+
+
         // 按日期篩選歷史記錄
         function filterHistoryByDate() {
             const filterValue = document.getElementById('dateFilter').value;
