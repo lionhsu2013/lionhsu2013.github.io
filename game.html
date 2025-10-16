@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>誰的背包準備好？🎒</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      overflow: hidden;
+    }
+    .draggable-item img {
+      pointer-events: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-blue-300 via-purple-300 to-pink-300 min-h-screen flex flex-col">
+
+  <div id="root" class="flex-1"></div>
+
+  <script type="text/babel">
+
+    const { useState, useEffect } = React;
+
+    function BackpackGame() {
+      const correctItems = [
+        { name: '蘋果', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Red_Apple.jpg/800px-Red_Apple.jpg' },
+        { name: '背包', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200&h=200&fit=crop' },
+        { name: '帽子', url: 'https://images.unsplash.com/photo-1529074290759-272a882cbf1d?w=200&h=200&fit=crop' },
+        { name: '水壺', url: 'https://images.unsplash.com/photo-1602088113235-229c19758e9f?w=200&h=200&fit=crop' },
+        { name: '便當', url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop' },
+        { name: '毛巾', url: 'https://images.unsplash.com/photo-1584622614875-e51df1bdc82f?w=200&h=200&fit=crop' },
+        { name: '相機', url: 'https://images.unsplash.com/photo-1606986628025-35d57e735ae0?w=200&h=200&fit=crop' },
+        { name: '地圖', url: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=200&h=200&fit=crop' },
+        { name: '鞋子', url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&h=200&fit=crop' },
+        { name: '防曬', url: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=200&h=200&fit=crop' },
+      ];
+
+      const wrongItems = [
+        { name: '冰淇淋', url: 'https://images.unsplash.com/photo-1563805042-7684c019e0d0?w=200&h=200&fit=crop' },
+        { name: '薯片', url: 'https://images.unsplash.com/photo-1599599810694-e6e99c1b12d5?w=200&h=200&fit=crop' },
+        { name: '手機', url: 'https://images.unsplash.com/photo-1511707267537-b85faf00021e?w=200&h=200&fit=crop' },
+        { name: '遊戲機', url: 'https://images.unsplash.com/photo-1538481143235-76d440642117?w=200&h=200&fit=crop' },
+        { name: '玩具', url: 'https://images.unsplash.com/photo-1631308993103-f97e7bc5e1d0?w=200&h=200&fit=crop' },
+        { name: '漫畫', url: 'https://images.unsplash.com/photo-1507842217343-583f20270319?w=200&h=200&fit=crop' },
+        { name: '可樂', url: 'https://images.unsplash.com/photo-1554866585-3ceaf5509e94?w=200&h=200&fit=crop' },
+        { name: '巧克力', url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200&h=200&fit=crop' },
+        { name: '糖果', url: 'https://images.unsplash.com/photo-1599599810694-e6e99c1b12d5?w=200&h=200&fit=crop' },
+        { name: '平板', url: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=200&h=200&fit=crop' },
+      ];
+
+      const [gameState, setGameState] = useState('setup');
+      const [timeLeft, setTimeLeft] = useState(30);
+      const [targetItems, setTargetItems] = useState(5);
+      const [wrongCount, setWrongCount] = useState(3);
+      const [gameTime, setGameTime] = useState(30);
+      const [items, setItems] = useState([]);
+      const [droppedItems, setDroppedItems] = useState([]);
+      const [draggedItem, setDraggedItem] = useState(null);
+
+      const startGame = () => {
+        const allItems = [
+          ...correctItems.slice(0, targetItems).map((item, i) => ({ id: i, name: item.name, url: item.url, correct: true })),
+          ...wrongItems.slice(0, wrongCount).map((item, i) => ({
+            id: correctItems.length + i,
+            name: item.name,
+            url: item.url,
+            correct: false,
+          })),
+        ].map((item) => ({
+          ...item,
+          x: Math.random() * 80 + 10,
+          y: Math.random() * 70 + 10,
+        }));
+
+        setItems(allItems);
+        setDroppedItems([]);
+        setTimeLeft(gameTime);
+        setGameState('playing');
+      };
+
+      useEffect(() => {
+        if (gameState !== 'playing') return;
+        const timer = setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev <= 1) {
+              setGameState('lost');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearInterval(timer);
+      }, [gameState]);
+
+      const handleDragStart = (e, item) => {
+        setDraggedItem(item);
+      };
+      const handleDragOver = (e) => e.preventDefault();
+      const handleDropOnBackpack = (e) => {
+        e.preventDefault();
+        if (!draggedItem || gameState !== 'playing') return;
+        if (!draggedItem.correct) {
+          playSound('error');
+          setDraggedItem(null);
+          return;
+        }
+        playSound('drop');
+        const newDropped = [...droppedItems, draggedItem];
+        setDroppedItems(newDropped);
+        setItems(items.filter((it) => it.id !== draggedItem.id));
+        setDraggedItem(null);
+        if (newDropped.filter((it) => it.correct).length === targetItems) {
+          setGameState('won');
+          playSound('success');
+        }
+      };
+
+      const playSound = (type) => {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          if (type === 'drop') osc.frequency.value = 500;
+          else if (type === 'error') osc.frequency.value = 200;
+          else if (type === 'success') osc.frequency.value = 800;
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } catch (e) {}
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {gameState === 'setup' && (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+                <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-8">
+                  誰的背包準備好？
+                </h1>
+                <div className="space-y-6">
+                  <div className="bg-blue-50 rounded-2xl p-4">
+                    <label className="block text-lg font-semibold text-gray-700 mb-2">⏱️ 遊戲時間（秒）</label>
+                    <input type="number" min="10" max="120" value={gameTime} onChange={(e)=>setGameTime(parseInt(e.target.value)||30)} className="w-full text-2xl font-bold text-center border-4 border-blue-400 rounded-xl p-2"/>
+                  </div>
+                  <div className="bg-green-50 rounded-2xl p-4">
+                    <label className="block text-lg font-semibold text-gray-700 mb-2">✅ 正確物品數量</label>
+                    <input type="number" min="1" max="10" value={targetItems} onChange={(e)=>setTargetItems(parseInt(e.target.value)||5)} className="w-full text-2xl font-bold text-center border-4 border-green-400 rounded-xl p-2"/>
+                  </div>
+                  <div className="bg-red-50 rounded-2xl p-4">
+                    <label className="block text-lg font-semibold text-gray-700 mb-2">❌ 錯誤物品數量</label>
+                    <input type="number" min="0" max="10" value={wrongCount} onChange={(e)=>setWrongCount(parseInt(e.target.value)||3)} className="w-full text-2xl font-bold text-center border-4 border-red-400 rounded-xl p-2"/>
+                  </div>
+                  <button onClick={startGame} className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-2xl font-bold py-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all">🎮 開始遊戲</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {gameState === 'playing' && (
+            <>
+              <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 flex justify-around items-center">
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm font-semibold">⏱️ 時間剩餘</p>
+                  <p className={`text-3xl font-bold ${timeLeft<=10?'text-red-600':'text-blue-600'}`}>{timeLeft}s</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm font-semibold">✅ 正確</p>
+                  <p className="text-3xl font-bold text-green-600">{droppedItems.filter(it=>it.correct).length}/{targetItems}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm font-semibold">剩餘物品</p>
+                  <p className="text-3xl font-bold text-purple-600">{items.length}</p>
+                </div>
+              </div>
+
+              <div className="flex-1 relative">
+                {items.map((item)=>(
+                  <div key={item.id} draggable onDragStart={(e)=>handleDragStart(e,item)} className="draggable-item absolute cursor-grab hover:scale-110 transition-transform select-none" style={{left:`${item.x}%`,top:`${item.y}%`,width:'80px',height:'80px'}}>
+                    <img src={item.url} alt={item.name} className="w-full h-full object-contain rounded-lg shadow-lg bg-white p-1"/>
+                  </div>
+                ))}
+
+                <div onDragOver={handleDragOver} onDrop={handleDropOnBackpack} className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="flex flex-col items-center">
+                    <div className="bg-red-600 rounded-b-3xl rounded-t-2xl p-8 w-40 h-48 shadow-2xl flex items-center justify-center border-8 border-red-700 hover:bg-red-700 transition-colors">
+                      <p className="text-8xl">🎒</p>
+                    </div>
+                    <div className="mt-4 bg-white rounded-2xl px-4 py-2 shadow-lg">
+                      <p className="text-center font-bold text-gray-800">拖曳物品到背包</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {gameState === 'won' && (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-bounce">
+                <p className="text-8xl mb-6">🎉</p>
+                <h2 className="text-4xl font-bold text-green-600 mb-4">成功！</h2>
+                <p className="text-2xl text-gray-700 mb-8">完美收集 {targetItems} 個正確物品！</p>
+                <button onClick={()=>setGameState('setup')} className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white text-2xl font-bold py-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2">
+                  🔁 重新開始
+                </button>
+              </div>
+            </div>
+          )}
+
+          {gameState === 'lost' && (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center">
+                <p className="text-8xl mb-6">😢</p>
+                <h2 className="text-4xl font-bold text-red-600 mb-4">時間到！</h2>
+                <p className="text-2xl text-gray-700 mb-2">正確收集：{droppedItems.filter(it=>it.correct).length}/{targetItems}</p>
+                <button onClick={()=>setGameState('setup')} className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-2xl font-bold py-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2">
+                  🔁 重新開始
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<BackpackGame />);
+
+  </script>
+
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</body>
+</html>
