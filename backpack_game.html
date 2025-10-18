@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>誰的背包準備好？🎒</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      overflow: hidden;
+    }
+    .draggable-item img {
+      pointer-events: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-blue-300 via-purple-300 to-pink-300 min-h-screen flex flex-col">
+
+  <div id="root" class="flex-1"></div>
+
+  <script type="text/babel">
+
+    const { useState, useEffect } = React;
+
+    function BackpackGame() {
+      const correctItems = [
+        { name: '蘋果', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Red_Apple.jpg/800px-Red_Apple.jpg' },
+        { name: '背包', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200&h=200&fit=crop' },
+        { name: '帽子', url: 'https://img.pchome.com.tw/cs/items/DICFY9A900BECLJ/000001_1621997293.jpg' },
+        { name: '水瓶', url: 'https://img.leezen.com.tw/upload/images/3050101280SP.jpg' },
+        { name: '便當', url: 'https://img.yec.tw/zp/images/4237B2069190EE4A671A1B5C271C2787EADBD8C6' },
+        { name: '毛巾', url: 'https://nitorimain.blob.core.windows.net/products/21/2112100002780_01.jpg' },
+        { name: '相機', url: 'https://img.elifemall.com.tw/media/product/main/205684/conv/wtOq4ArIZrs4EzclRYkgYiGJorA6QHS7pBfX6FSObXCbmpaOWR7pZcLEv6nfR5Tk-medium.jpg' },
+        { name: '地圖', url: 'https://s.eslite.com/Upload/Product/201907/o/636985171083638750.jpg' },
+        { name: '鞋子', url: 'https://www.familyshoes.com.tw/new_salejpg/9623050_01.jpg' },
+        { name: '防曬', url: 'https://img.ttv.com.tw/cmall/img.axd?id=a13a24785b7d42cfb0204350724c0d4c&mw=700&mh=700' },
+      ];
+
+      const wrongItems = [
+        { name: '冰淇淋', url: 'https://ciao.kitchen/wp-content/uploads/2018/08/veganicecream-e1555644692800.jpg' },
+        { name: '薯片', url: 'https://im1.book.com.tw/image/getImage?i=https://www.books.com.tw/img/N00/152/87/N001528732.jpg&v=65d5aad7k&w=348&h=348' },
+        { name: '手機', url: 'https://imgcdn.cna.com.tw/www/WebPhotos/1024/20250220/839x1024_wmkn_0_C20250220000001.jpg'},
+        { name: '遊戲機', url: 'https://bucket-image.inkmaginecms.com/version/desktop/1/image/2025/01/1b7cfe9d-a8e0-443f-97b4-5beeab38add4.jpg' },
+        { name: '漫畫', url: 'https://bucket-image.inkmaginecms.com/version/hd/1/image/2024/07/ca2cfee3-88ae-4c55-a912-a7b50de756dc.png' },
+        { name: '可樂', url: 'https://i.epochtimes.com/assets/uploads/2023/07/id14027860-shutterstock_268331306.jpg' },
+        { name: '巧克力', url: 'https://grinews.com/news/wp-content/uploads/2022/11/ADDY4329.jpg' },
+        { name: '糖果', url: 'https://img.ltn.com.tw/Upload/food/page/2017/05/13/170513-5990-1-va3G8.jpg' },
+        { name: '平板', url: 'https://storage.googleapis.com/landtop_prod/product/2973/product_image/060a4e66c71fae0246190af8daed9ea0.png'}
+      ];
+
+      const [gameState, setGameState] = useState('setup');
+      const [timeLeft, setTimeLeft] = useState(30);
+      const [targetItems, setTargetItems] = useState(5);
+      const [wrongCount, setWrongCount] = useState(3);
+      const [gameTime, setGameTime] = useState(30);
+      const [items, setItems] = useState([]);
+      const [droppedItems, setDroppedItems] = useState([]);
+      const [draggedItem, setDraggedItem] = useState(null);
+
+      // 計算背包區域（中心矩形）
+      const backpackArea = {
+        left: 40,
+        right: 60,
+        top: 35,
+        bottom: 65,
+        width: 20,
+        height: 30
+      };
+
+      // 檢查兩個物品是否重疊
+      const isOverlapping = (pos1, pos2, itemSize = 8) => {
+        const distance = Math.sqrt(
+          Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2)
+        );
+        return distance < itemSize * 2.5;
+      };
+
+      // 檢查物品是否與背包區域重疊
+      const overlapWithBackpack = (pos, itemSize = 8) => {
+        const itemMargin = itemSize / 2;
+        return !(
+          pos.x + itemMargin < backpackArea.left ||
+          pos.x - itemMargin > backpackArea.right ||
+          pos.y + itemMargin < backpackArea.top ||
+          pos.y - itemMargin > backpackArea.bottom
+        );
+      };
+
+      // 生成不重疊的隨機位置
+      const generateNonOverlappingPositions = (count) => {
+        const positions = [];
+        const maxAttempts = 200;
+        const itemSize = 8;
+
+        for (let i = 0; i < count; i++) {
+          let position;
+          let attempts = 0;
+
+          do {
+            position = {
+              x: Math.random() * 85 + 5,
+              y: Math.random() * 80 + 5
+            };
+            attempts++;
+          } while (
+            (positions.some(p => isOverlapping(position, p, itemSize)) ||
+            overlapWithBackpack(position, itemSize)) &&
+            attempts < maxAttempts
+          );
+
+          if (attempts < maxAttempts) {
+            positions.push(position);
+          }
+        }
+
+        return positions;
+      };
+
+      const startGame = () => {
+        const totalItems = targetItems + wrongCount;
+        const positions = generateNonOverlappingPositions(totalItems);
+
+        const allItems = [
+          ...correctItems.slice(0, targetItems).map((item, i) => ({
+            id: i,
+            name: item.name,
+            url: item.url,
+            correct: true,
+            x: positions[i]?.x || 50,
+            y: positions[i]?.y || 50
+          })),
+          ...wrongItems.slice(0, wrongCount).map((item, i) => ({
+            id: targetItems + i,
+            name: item.name,
+            url: item.url,
+            correct: false,
+            x: positions[targetItems + i]?.x || 50,
+            y: positions[targetItems + i]?.y || 50
+          }))
+        ];
+
+        setItems(allItems);
+        setDroppedItems([]);
+        setTimeLeft(gameTime);
+        setGameState('playing');
+      };
+
+      useEffect(() => {
+        if (gameState !== 'playing') return;
+        const timer = setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev <= 1) {
+              setGameState('lost');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearInterval(timer);
+      }, [gameState]);
+
+      const handleDragStart = (e, item) => {
+        setDraggedItem(item);
+      };
+
+      const handleDragOver = (e) => e.preventDefault();
+
+      const handleDropOnBackpack = (e) => {
+        e.preventDefault();
+        if (!draggedItem || gameState !== 'playing') return;
+        if (!draggedItem.correct) {
+          playSound('error');
+          setDraggedItem(null);
+          return;
+        }
+        playSound('drop');
+        const newDropped = [...droppedItems, draggedItem];
+        setDroppedItems(newDropped);
+        setItems(items.filter((it) => it.id !== draggedItem.id));
+        setDraggedItem(null);
+        if (newDropped.filter((it) => it.correct).length === targetItems) {
+          setGameState('won');
+          playSound('success');
+        }
+      };
+
+      const playSound = (type) => {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          if (type === 'drop') osc.frequency.value = 500;
+          else if (type === 'error') osc.frequency.value = 200;
+          else if (type === 'success') osc.frequency.value = 800;
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } catch (e) {}
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {gameState === 'setup' && (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+                <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-8">
+                  誰的背包準備好？
+                </h1>
+                <div className="space-y-6">
+                  <div className="bg-blue-50 rounded-2xl p-4">
+                    <label className="block text-lg font-semibold text-gray-700 mb-2">⏱️ 遊戲時間（秒）</label>
+                    <input type="number" min="10" max="120" value={gameTime} onChange={(e)=>setGameTime(parseInt(e.target.value)||30)} className="w-full text-2xl font-bold text-center border-4 border-blue-400 rounded-xl p-2"/>
+                  </div>
+                  <div className="bg-green-50 rounded-2xl p-4">
+                    <label className="block text-lg font-semibold text-gray-700 mb-2">✅ 正確物品數量</label>
+                    <input type="number" min="1" max="10" value={targetItems} onChange={(e)=>setTargetItems(parseInt(e.target.value)||5)} className="w-full text-2xl font-bold text-center border-4 border-green-400 rounded-xl p-2"/>
+                  </div>
+                  <div className="bg-red-50 rounded-2xl p-4">
+                    <label className="block text-lg font-semibold text-gray-700 mb-2">❌ 錯誤物品數量</label>
+                    <input type="number" min="0" max="10" value={wrongCount} onChange={(e)=>setWrongCount(parseInt(e.target.value)||3)} className="w-full text-2xl font-bold text-center border-4 border-red-400 rounded-xl p-2"/>
+                  </div>
+                  <button onClick={startGame} className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-2xl font-bold py-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all">🎮 開始遊戲</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {gameState === 'playing' && (
+            <>
+              <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 flex justify-around items-center">
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm font-semibold">⏱️ 時間剩餘</p>
+                  <p className={`text-3xl font-bold ${timeLeft<=10?'text-red-600':'text-blue-600'}`}>{timeLeft}s</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm font-semibold">✅ 正確</p>
+                  <p className="text-3xl font-bold text-green-600">{droppedItems.filter(it=>it.correct).length}/{targetItems}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm font-semibold">剩餘物品</p>
+                  <p className="text-3xl font-bold text-purple-600">{items.length}</p>
+                </div>
+              </div>
+
+              <div className="flex-1 relative">
+                {items.map((item)=>(
+                  <div key={item.id} draggable onDragStart={(e)=>handleDragStart(e,item)} className="draggable-item absolute cursor-grab hover:scale-110 transition-transform select-none" style={{left:`${item.x}%`,top:`${item.y}%`,width:'80px',transform:'translateX(-50%) translateY(-50%)'}}>
+                    <div className="flex flex-col items-center">
+                      <img src={item.url} alt={item.name} className="w-full h-20 object-contain rounded-lg shadow-lg bg-white p-1"/>
+                      <div className="mt-1 bg-white rounded-lg px-2 py-1 shadow-md border-2 border-gray-300 whitespace-nowrap text-xs font-bold text-gray-800">
+                        {item.name}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <div onDragOver={handleDragOver} onDrop={handleDropOnBackpack} className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="flex flex-col items-center">
+                    <div className="rounded-b-3xl rounded-t-2xl p-8 w-40 h-48 shadow-2xl flex items-center justify-center  border-red-700 hover:bg-red-700 transition-colors bg-transparent">
+                         <p className="text-8xl">🎒</p>
+                        
+                  </div>
+                    <div className="mt-4 bg-white rounded-2xl px-4 py-2 shadow-lg">
+                      <p className="text-center font-bold text-gray-800">拖曳物品到背包</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {gameState === 'won' && (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-bounce">
+                <p className="text-8xl mb-6">🎉</p>
+                <h2 className="text-4xl font-bold text-green-600 mb-4">成功！</h2>
+                <p className="text-2xl text-gray-700 mb-8">完美收集 {targetItems} 個正確物品！</p>
+                <button onClick={()=>setGameState('setup')} className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white text-2xl font-bold py-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2">
+                  🔄 重新開始
+                </button>
+              </div>
+            </div>
+          )}
+
+          {gameState === 'lost' && (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center">
+                <p className="text-8xl mb-6">😢</p>
+                <h2 className="text-4xl font-bold text-red-600 mb-4">時間到！</h2>
+                <p className="text-2xl text-gray-700 mb-2">正確收集：{droppedItems.filter(it=>it.correct).length}/{targetItems}</p>
+                <button onClick={()=>setGameState('setup')} className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-2xl font-bold py-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2">
+                  🔄 重新開始
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<BackpackGame />);
+
+  </script>
+
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</body>
+</html>
