@@ -1,10 +1,371 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
   <head>
-    <meta charset="utf-8">
-    <title>你好，GitHub</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>星星收集小遊戲</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Noto Sans TC", "Segoe UI", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #fef3c7, #bfdbfe);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .game-card {
+        width: min(960px, 100%);
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+        padding: 32px;
+        display: grid;
+        gap: 24px;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      header h1 {
+        font-size: clamp(1.5rem, 3vw, 2.4rem);
+        margin: 0;
+        color: #0f172a;
+      }
+
+      header p {
+        margin: 4px 0 0;
+        color: #475569;
+      }
+
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .stat {
+        background: #f1f5f9;
+        border-radius: 16px;
+        padding: 12px 16px;
+        min-width: 120px;
+      }
+
+      .stat span {
+        display: block;
+        font-size: 0.85rem;
+        color: #64748b;
+      }
+
+      .stat strong {
+        font-size: 1.4rem;
+        color: #0f172a;
+      }
+
+      .controls {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 10px 20px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button.primary {
+        background: #2563eb;
+        color: white;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+      }
+
+      button.secondary {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        box-shadow: none;
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-2px);
+      }
+
+      .arena {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #38bdf8, #a5b4fc 45%, #fbcfe8);
+        overflow: hidden;
+        border: 4px solid #fff;
+      }
+
+      .player {
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: #0f172a;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.35);
+        transition: transform 0.1s linear;
+        user-select: none;
+      }
+
+      .star {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: #facc15;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        box-shadow: 0 8px 16px rgba(250, 204, 21, 0.4);
+        animation: float 1.4s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-6px);
+        }
+      }
+
+      .message {
+        padding: 16px;
+        border-radius: 16px;
+        background: #f8fafc;
+        color: #334155;
+      }
+
+      .message strong {
+        color: #0f172a;
+      }
+
+      .hint {
+        font-size: 0.95rem;
+        color: #64748b;
+      }
+
+      @media (max-width: 720px) {
+        .game-card {
+          padding: 24px;
+        }
+
+        .player {
+          width: 48px;
+          height: 48px;
+        }
+
+        .star {
+          width: 34px;
+          height: 34px;
+        }
+      }
+    </style>
   </head>
   <body>
-    <h1>覺得厲害20202</h1>
+    <main class="game-card">
+      <header>
+        <div>
+          <h1>星星收集小遊戲</h1>
+          <p>用方向鍵或 WASD 操作太空人，30 秒內收集越多星星越好。</p>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <span>剩餘時間</span>
+            <strong id="time">30</strong>
+          </div>
+          <div class="stat">
+            <span>分數</span>
+            <strong id="score">0</strong>
+          </div>
+          <div class="stat">
+            <span>最高分</span>
+            <strong id="best">0</strong>
+          </div>
+        </div>
+      </header>
+
+      <section class="controls">
+        <button class="primary" id="startBtn">開始遊戲</button>
+        <button class="secondary" id="resetBtn">重新定位星星</button>
+      </section>
+
+      <section class="arena" id="arena" aria-label="遊戲區域">
+        <div class="player" id="player" aria-hidden="true">🚀</div>
+        <div class="star" id="star">⭐</div>
+      </section>
+
+      <section class="message">
+        <strong>遊戲提示：</strong>
+        <span class="hint">碰到星星會加 5 分並補充 1 秒時間；落在邊緣會被彈回。</span>
+      </section>
+    </main>
+
+    <script>
+      const arena = document.getElementById("arena");
+      const player = document.getElementById("player");
+      const star = document.getElementById("star");
+      const timeDisplay = document.getElementById("time");
+      const scoreDisplay = document.getElementById("score");
+      const bestDisplay = document.getElementById("best");
+      const startBtn = document.getElementById("startBtn");
+      const resetBtn = document.getElementById("resetBtn");
+
+      let playerPos = { x: 40, y: 40 };
+      let starPos = { x: 70, y: 50 };
+      let keysPressed = new Set();
+      let score = 0;
+      let best = 0;
+      let timeLeft = 30;
+      let timerId = null;
+      let playing = false;
+
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+      const placeStar = () => {
+        const rect = arena.getBoundingClientRect();
+        const padding = 12;
+        const starSize = 40;
+        const x = Math.random() * (rect.width - starSize - padding * 2) + padding;
+        const y = Math.random() * (rect.height - starSize - padding * 2) + padding;
+        starPos = {
+          x: (x / rect.width) * 100,
+          y: (y / rect.height) * 100
+        };
+        star.style.left = `${starPos.x}%`;
+        star.style.top = `${starPos.y}%`;
+      };
+
+      const updatePlayer = () => {
+        player.style.left = `${playerPos.x}%`;
+        player.style.top = `${playerPos.y}%`;
+      };
+
+      const resetGame = () => {
+        score = 0;
+        timeLeft = 30;
+        playerPos = { x: 40, y: 40 };
+        updatePlayer();
+        placeStar();
+        scoreDisplay.textContent = score;
+        timeDisplay.textContent = timeLeft;
+      };
+
+      const startGame = () => {
+        if (playing) return;
+        playing = true;
+        startBtn.textContent = "遊戲進行中";
+        startBtn.disabled = true;
+        resetGame();
+        timerId = window.setInterval(() => {
+          timeLeft -= 1;
+          timeDisplay.textContent = timeLeft;
+          if (timeLeft <= 0) {
+            endGame();
+          }
+        }, 1000);
+      };
+
+      const endGame = () => {
+        playing = false;
+        window.clearInterval(timerId);
+        timerId = null;
+        startBtn.textContent = "再次挑戰";
+        startBtn.disabled = false;
+        if (score > best) {
+          best = score;
+          bestDisplay.textContent = best;
+        }
+      };
+
+      const handleMovement = () => {
+        if (!playing) return;
+        const speed = 0.7;
+        const movement = {
+          x: 0,
+          y: 0
+        };
+
+        if (keysPressed.has("ArrowUp") || keysPressed.has("w")) movement.y -= speed;
+        if (keysPressed.has("ArrowDown") || keysPressed.has("s")) movement.y += speed;
+        if (keysPressed.has("ArrowLeft") || keysPressed.has("a")) movement.x -= speed;
+        if (keysPressed.has("ArrowRight") || keysPressed.has("d")) movement.x += speed;
+
+        if (movement.x === 0 && movement.y === 0) {
+          requestAnimationFrame(handleMovement);
+          return;
+        }
+
+        playerPos = {
+          x: clamp(playerPos.x + movement.x, 2, 92),
+          y: clamp(playerPos.y + movement.y, 2, 86)
+        };
+        updatePlayer();
+        checkCollision();
+        requestAnimationFrame(handleMovement);
+      };
+
+      const checkCollision = () => {
+        const distance = Math.hypot(playerPos.x - starPos.x, playerPos.y - starPos.y);
+        if (distance < 6) {
+          score += 5;
+          timeLeft = Math.min(45, timeLeft + 1);
+          scoreDisplay.textContent = score;
+          timeDisplay.textContent = timeLeft;
+          placeStar();
+        }
+      };
+
+      document.addEventListener("keydown", (event) => {
+        const key = event.key.toLowerCase();
+        if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(key)) {
+          event.preventDefault();
+        }
+        keysPressed.add(key);
+      });
+
+      document.addEventListener("keyup", (event) => {
+        keysPressed.delete(event.key.toLowerCase());
+      });
+
+      startBtn.addEventListener("click", startGame);
+      resetBtn.addEventListener("click", placeStar);
+
+      window.addEventListener("load", () => {
+        updatePlayer();
+        placeStar();
+        requestAnimationFrame(handleMovement);
+      });
+    </script>
   </body>
 </html>
