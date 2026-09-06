@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Sky Hopper 雲上跳躍</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='42' fill='%23d94f4f'/%3E%3Ccircle cx='36' cy='44' r='7' fill='%23fff'/%3E%3Ccircle cx='64' cy='44' r='7' fill='%23fff'/%3E%3Ccircle cx='36' cy='44' r='3.5' fill='%2314314f'/%3E%3Ccircle cx='64' cy='44' r='3.5' fill='%2314314f'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div id="hud-hearts" class="hud-box"></div>
+      <div class="hud-box hud-center">
+        <div id="hud-level">—</div>
+        <div id="hud-time">00.0</div>
+      </div>
+      <div class="hud-box" id="hud-coins">🪙 0</div>
+    </div>
+    <div id="hud-hint"></div>
+  </div>
+
+  <!-- 主選單 -->
+  <div id="menu" class="overlay">
+    <h1 class="title">SKY&nbsp;HOPPER</h1>
+    <p class="subtitle">雲上跳躍</p>
+    <div id="menu-levels" class="level-select">
+      <button class="lv-btn" data-level="1">1<br><small>浮空初階</small></button>
+      <button class="lv-btn" data-level="2">2<br><small>雲台巡禮</small></button>
+      <button class="lv-btn" data-level="3">3<br><small>風暴尖峰</small></button>
+    </div>
+    <div class="menu-actions">
+      <button id="btn-start" class="primary">開始遊戲</button>
+      <button id="btn-store">角色商店</button>
+      <button id="btn-achv">成就</button>
+      <button id="btn-mute-menu">音效：開</button>
+    </div>
+    <div id="menu-best" class="menu-best"></div>
+  </div>
+
+  <!-- 暫停 -->
+  <div id="pause" class="overlay hidden">
+    <h2>暫停</h2>
+    <div class="menu-actions">
+      <button id="btn-resume" class="primary">繼續</button>
+      <button id="btn-retry">重試本關</button>
+      <button id="btn-quit">回主選單</button>
+      <button id="btn-mute">音效：開</button>
+    </div>
+    <p class="hint-line">桌面：WASD 移動 / 空格跳 / 滑鼠或 Q·E 轉鏡頭 / ESC 暫停</p>
+  </div>
+
+  <!-- 關卡完成 -->
+  <div id="complete" class="overlay hidden">
+    <h2>關卡完成！</h2>
+    <div id="complete-stats" class="stats"></div>
+    <div class="menu-actions">
+      <button id="btn-next" class="primary">下一關</button>
+      <button id="btn-complete-menu">回主選單</button>
+    </div>
+  </div>
+
+  <!-- 遊戲結束 -->
+  <div id="gameover" class="overlay hidden">
+    <h2>遊戲結束</h2>
+    <p id="gameover-msg" class="subtitle"></p>
+    <div class="menu-actions">
+      <button id="btn-retry2" class="primary">重試本關</button>
+      <button id="btn-goto-menu">回主選單</button>
+    </div>
+  </div>
+
+  <!-- 商店 -->
+  <div id="store" class="overlay hidden">
+    <h2>角色商店</h2>
+    <div id="store-grid" class="grid"></div>
+    <button id="btn-store-close">返回</button>
+  </div>
+
+  <!-- 成就 -->
+  <div id="achv" class="overlay hidden">
+    <h2>成就</h2>
+    <div id="achv-list" class="grid"></div>
+    <button id="btn-achv-close">返回</button>
+  </div>
+
+  <!-- 成就 toast -->
+  <div id="toasts"></div>
+
+  <!-- 觸控 UI -->
+  <div id="touch-ui" class="hidden">
+    <div id="joy-base"><div id="joy-stick"></div></div>
+    <button id="btn-jump">跳</button>
+  </div>
+
+  <!-- file:// 防護 -->
+  <div id="file-guard" class="overlay hidden">
+    <h2>需要本地伺服器</h2>
+    <p>本遊戲使用 ES Modules，無法以雙擊（file://）開啟。<br>
+       請在此目錄執行：<code>python3 -m http.server 8000</code><br>
+       再瀏覽 <code>http://127.0.0.1:8000</code></p>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
